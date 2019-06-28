@@ -33,9 +33,12 @@ class Trainer:
                 }
                 # Add entry to tensorboard graphs
                 self.logger.summarize(cur_step, sum_dict)
+            val_loss, val_acc = self.assert_model()
             if self.verbose:
                 print('Minibatch loss on epoch {}: {}'.format(cur_epoch, loss))
                 print('Minibatch accuracy: {}'.format(accuracy))
+                print('Validation accuracy: {}, Validation loss {}'.format(val_acc, val_loss))           
+            
         # Save model
         self.model.save(self.session)          
 
@@ -47,3 +50,12 @@ class Trainer:
         _, l, accuracy = self.session.run([self.model.optimizer, self.model.loss, self.model.train_accuracy],
                                             feed_dict=feed_dict)
         return l, accuracy
+   
+    def assert_model(self):
+        feed_dict = {self.model.x: self.data.valid_dataset, 
+                     self.model.y: self.data.valid_labels, 
+                     self.model.train: False}
+        _, l, acc = self.session.run([self.model.oprimizer, self.model.loss, self.model.train_accuracy],
+                                    feed_dict=feed_dict)
+        return l, acc
+        

@@ -22,46 +22,26 @@ from os import listdir
 from datetime import datetime
 
 def main():
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    cam = cv2.VideoCapture(0)
-    face_cas = cv2.CascadeClassifier('./cascades/haarcascade_frontalface_default.xml')
-    # faces,emotions = load_fer_dataset('./fer2013/fer2013.csv')
-    # train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels = split_dataset(faces, emotions)
+    faces,emotions = load_fer_dataset('./fer2013/fer2013.csv')
+    train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels = split_dataset(faces, emotions)
+
+    print('Train: %s %s' % (train_dataset.shape, train_labels.shape))
+    print('Validation: %s %s' % (valid_dataset.shape, valid_labels.shape))
+    print('Test: %s %s' % (test_dataset.shape, test_labels.shape))
     mod = model.model_net(net1_config, net1_hyperparams)
-    # d = Data(train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels)
+    d = Data(train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels)
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
 
-    with tf.Session() as sess:
-        mod.load(sess)
-        while True:
-            ret, frame = cam.read()
-        
-            if ret==True:
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                #gray = cv2.flip(gray,1)
-                faces = face_cas.detectMultiScale(gray, 1.3,5)
-                
-                for (x, y, w, h) in faces:
-                    face_component = gray[y:y+h, x:x+w]
-                    fc = cv2.resize(face_component, (48, 48))
-                    inp = np.reshape(fc,(1,48,48,1)).astype(np.float32)
-                    inp = inp/255.
-                    prediction = mod.predict(sess, inp)
-                    em = emo_to_string(prediction)
-                    cv2.putText(frame, em, (x, y), font, 1, (0, 255, 0), 2)
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                    cv2.imshow("image", frame)
-                
-                if cv2.waitKey(1) == 27:
-                    break
-            else:
-                print ('Error')
-
-        cam.release()
-        cv2.destroyAllWindows()
-        
+    with tf.Session(config=config) as sess:
+        log = Logger(sess, './logs/scalars/net1')
+        model_trainer = Trainer(sess, mod, log, d)
+        model_trainer.train()
 
 if __name__ == '__main__':
     main()
+    
+
 
 def webcam():
     print("hello")
