@@ -1,0 +1,2 @@
+model_checkpoint_path: "svm"
+all_model_checkpoint_paths: "svm"
