@@ -41,21 +41,24 @@ class Trainer:
                 }
                 # Add entry to tensorboard graphs
                 self.logger.summarize(cur_step, train=True, summaries_dict=sum_dict)
+                if(i%500==0):
+                    print('Average Minibatch loss on epoch {} step {}: {:0.6f}'.format(cur_epoch, i, loss))
+                    print('Average Minibatch accuracy: {:10.6f}'.format(accuracy))
             # Evaluate validation accuracy and loss
             val_loss, val_acc = self.eval_model()
             val_sum_dict = {
-                'valid_loss': val_loss,
-                'valid_accuracy': val_acc
+                'loss': val_loss,
+                'accuracy': val_acc
             }
             # Add scalar summary
-            self.logger.summarize(cur_step, train=True, summaries_dict=sum_dict)
+            self.logger.summarize(cur_step, train=False, summaries_dict=sum_dict)
             if self.verbose:
                 print('Average Minibatch loss on epoch {}: {:0.6f}'.format(cur_epoch, np.mean(losses)))
                 print('Average Minibatch accuracy: {:10.6f}'.format(np.mean(accuracies)))
                 print('Validation accuracy: {:10.6f}, Validation loss {:10.6f}'.format(val_acc, val_loss))           
             
-        # Save model
-        self.model.save(self.session)          
+            # Save model
+            self.model.save(self.session)          
 
 
     def train_step(self):
@@ -80,7 +83,7 @@ class Trainer:
             feed_dict = {self.model.x: batch, 
                          self.model.y: labels, 
                          self.model.train: False}
-            _, l, acc = self.session.run([self.model.optimizer, self.model.loss, self.model.train_accuracy],
+            l, acc = self.session.run([self.model.loss, self.model.train_accuracy],
                                         feed_dict=feed_dict)
             losses[i] = l
             accuracies[i] = acc

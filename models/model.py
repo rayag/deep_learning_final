@@ -30,8 +30,8 @@ class model_net():
                     'conv1' : tf.get_variable('w_conv1', shape=(3,3,1,64), initializer=self.hyperparams.initializer),
                     'conv2' : tf.get_variable('w_conv2', shape=(3,3,64,128), initializer=self.hyperparams.initializer),
                     'conv3' : tf.get_variable('w_conv3', shape=(3,3,128,256), initializer=self.hyperparams.initializer),
-                    'fc1' : tf.get_variable('w_fc1', shape=(9216, 4096), initializer=self.hyperparams.initializer),
-                    'fc2' : tf.get_variable('w_fc2', shape=(4096, 1024), initializer=self.hyperparams.initializer),
+                    'fc1' : tf.get_variable('w_fc1', shape=(9216, 1024), initializer=self.hyperparams.initializer),
+                    'fc2' : tf.get_variable('w_fc2', shape=(1024, 1024), initializer=self.hyperparams.initializer),
                     'fc3' : tf.get_variable('w_fc3', shape=(1024, 256), initializer=self.hyperparams.initializer),
                     'fc4' : tf.get_variable('w_fc4', shape=(256, 7), initializer=self.hyperparams.initializer)
                 }
@@ -39,7 +39,7 @@ class model_net():
                     'conv1' : tf.get_variable('b_conv1', shape=(64), initializer=tf.zeros_initializer()),
                     'conv2' : tf.get_variable('b_conv2', shape=(128), initializer=tf.zeros_initializer()),
                     'conv3' : tf.get_variable('b_conv3', shape=(256), initializer=tf.zeros_initializer()),
-                    'fc1' : tf.get_variable('b_fc1', shape=(4096), initializer=tf.zeros_initializer()),
+                    'fc1' : tf.get_variable('b_fc1', shape=(1024), initializer=tf.zeros_initializer()),
                     'fc2' : tf.get_variable('b_fc2', shape=(1024), initializer=tf.zeros_initializer()),
                     'fc3' : tf.get_variable('b_fc3', shape=(256), initializer=tf.zeros_initializer()),
                     'fc4' : tf.get_variable('b_fc4', shape=(7), initializer=tf.zeros_initializer())
@@ -57,10 +57,16 @@ class model_net():
 
                 conv3_reshape = tf.reshape(conv3, [-1, self.weights['fc1'].get_shape().as_list()[0]])
                 fc1 = dense_relu(conv3_reshape, self.weights['fc1'], self.biases['fc1'])
-
+                
+                fc1 = tf.cond(self.train, lambda: tf.nn.dropout(fc1, keep_prob=self.hyperparams.keep_prob), lambda: fc1)
+                
                 fc2 = dense_relu(fc1, self.weights['fc2'], self.biases['fc2'])
+                
+                fc2 = tf.cond(self.train, lambda: tf.nn.dropout(fc2, keep_prob=self.hyperparams.keep_prob), lambda: fc2)
 
                 fc3 = dense_relu(fc2, self.weights['fc3'], self.biases['fc3'])
+                
+                fc3 = tf.cond(self.train, lambda: tf.nn.dropout(fc3, keep_prob=self.hyperparams.keep_prob), lambda: fc3)
 
                 logits = dense_relu(fc3, self.weights['fc4'], self.biases['fc4'])
                 self.prediction = tf.argmax(tf.nn.softmax(logits))

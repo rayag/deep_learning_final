@@ -4,7 +4,8 @@ class HyperParams:
     def __init__(self, learning_rate, beta=0.9, 
                 batch_size=128, batch_norm=False, 
                 num_epochs=100, initializer=tf.contrib.layers.xavier_initializer(),
-                decay_rate = 0.96, decay_steps = 1000):
+                decay_rate=0.96, decay_steps=1000,
+                keep_prob=0.5):
         self.learning_rate = learning_rate
         self.beta = beta
         self.batch_norm = batch_norm
@@ -12,6 +13,7 @@ class HyperParams:
         self.batch_size = batch_size
         self.initializer = initializer
         self.decay_rate = decay_rate
+        self.keep_prob = keep_prob
         self.decay_steps = decay_steps
 
 net1_hyperparams = HyperParams(learning_rate=0.01, 
