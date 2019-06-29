@@ -33,10 +33,10 @@ def load_fer_dataset(path):
         faces.append(face.astype('float32'))
     # Convert to numpy array   
     faces = np.asarray(faces)
+    # subtract mean from each image
+    faces = np.asarray([img - np.mean(img) for img in faces])
     # normalize data 
     faces /= 255.0
-    # center data
-    faces = faces - np.mean(faces)
     # Expand to (48, 48, 1)
     faces = np.expand_dims(faces, -1)
 

@@ -17,5 +17,6 @@ class Data:
         return self.train_dataset.shape[0]
     
     def next_batch(self, batch_size):
-        indices = np.random.randint(self.train_size(), size=batch_size)
+#         indices = np.random.randint(self.train_size(), size=batch_size)
+        indices = range(batch_size)
         yield self.train_dataset[indices], self.train_labels[indices]

@@ -20,7 +20,7 @@ class model_net():
 
     def build_model(self):
         print("Building model")
-        with tf.device('/device:XLA_GPU:0'):
+        with tf.device('/device:GPU:0'):
             self.train = tf.placeholder(tf.bool)
             self.x = tf.placeholder(tf.float32, shape=[None, 48, 48, 1])
             self.y = tf.placeholder(tf.float32, shape=[None, 7])
@@ -46,13 +46,13 @@ class model_net():
                 }
 
 
-                conv1 = conv2d(self.x, self.weights['conv1'], self.biases['conv1'], strides=1) # 48x48x64
+                conv1 = conv2d(self.x, self.weights['conv1'], self.biases['conv1'], strides=1, batch_normalization=True) # 48x48x64
                 conv1 = maxpool2d(conv1, k=3, strides=2) # 24x24x64
 
-                conv2 = conv2d(conv1, self.weights['conv2'], self.biases['conv2'], strides=1) # 24x24x128
+                conv2 = conv2d(conv1, self.weights['conv2'], self.biases['conv2'], strides=1, batch_normalization=True) # 24x24x128
                 conv2 = maxpool2d(conv2, k=3, strides=2) # 12x12x128
 
-                conv3 = conv2d(conv2, self.weights['conv3'], self.biases['conv3'], strides=1) # 12x12x256
+                conv3 = conv2d(conv2, self.weights['conv3'], self.biases['conv3'], strides=1, batch_normalization=True) # 12x12x256
                 conv3 = maxpool2d(conv3, k=3, strides=2) # 6x6x256
 
                 conv3_reshape = tf.reshape(conv3, [-1, self.weights['fc1'].get_shape().as_list()[0]])
@@ -68,7 +68,13 @@ class model_net():
                     self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y, logits=logits))
                     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
                     with tf.control_dependencies(update_ops):
-                        self.optimizer = tf.train.MomentumOptimizer(learning_rate=0.01, momentum=0.9).minimize(self.loss, global_step=self.global_step_tensor)
+                        learning_rate = tf.train.exponential_decay(learning_rate=self.hyperparams.learning_rate,
+                                                                  global_step=self.global_step_tensor,
+                                                                  decay_steps=self.hyperparams.decay_steps,
+                                                                  decay_rate=self.hyperparams.decay_rate,
+                                                                  staircase=True)
+                        self.optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, 
+                                                                    momentum=self.hyperparams.beta).minimize(self.loss, global_step=self.global_step_tensor)
                     correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(self.y, 1))
                     self.train_accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     
